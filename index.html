@@ -3,71 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QR Code Generator</title>
+<title>Matter Setup Code Label</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="matter-label.css">
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>QR Code Generator</h1>
+    <h1>Matter Setup Code Label</h1>
     <p class="subtitle">
-      Runs entirely in your browser — no data leaves this page.
-      &middot; <a href="matter-label.html">Matter Setup Code Label &rarr;</a>
+      Primary Setup Code label per the Matter brand asset &mdash; 22&nbsp;mm wide (31&nbsp;mm tall, or 33&nbsp;mm for a 21-digit code), 1.5&nbsp;mm corner radius, optional 1pt border.
     </p>
   </header>
 
   <main>
     <section class="panel controls">
-      <label for="data">Text or URL</label>
-      <textarea id="data" rows="4" placeholder="Type text, a URL, or any payload to encode&hellip;">https://claude.com</textarea>
+      <label for="qrPayload">QR payload (Matter onboarding payload)</label>
+      <textarea id="qrPayload" rows="2" placeholder="MT:U1TJ05WJ018IBG2J.10">MT:U1TJ05WJ018IBG2J.10</textarea>
 
-      <div class="row">
-        <div class="field">
-          <label for="ecLevel">Error correction</label>
-          <select id="ecLevel">
-            <option value="L">L &ndash; ~7% recovery</option>
-            <option value="M">M &ndash; ~15% recovery</option>
-            <option value="Q">Q &ndash; ~25% recovery</option>
-            <option value="H">H &ndash; ~30% recovery</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="version">Version</label>
-          <select id="version">
-            <option value="0" selected>Auto</option>
-          </select>
-        </div>
-      </div>
+      <label for="ecLevel">Error correction</label>
+      <select id="ecLevel">
+        <option value="L" selected>L &ndash; ~7% recovery</option>
+        <option value="M">M &ndash; ~15% recovery</option>
+        <option value="Q">Q &ndash; ~25% recovery</option>
+        <option value="H">H &ndash; ~30% recovery</option>
+      </select>
 
-      <div class="row">
-        <div class="field">
-          <label for="size">Module size (px)</label>
-          <input type="number" id="size" min="1" max="40" value="8">
-        </div>
-        <div class="field">
-          <label for="margin">Quiet zone (modules)</label>
-          <input type="number" id="margin" min="0" max="20" value="4">
-        </div>
-      </div>
+      <label>Setup code (derived from the QR payload)</label>
+      <input type="text" class="derived-code" id="derivedCode" value="&mdash;" readonly aria-label="Derived setup code">
+      <p class="hint">Decoded from the Matter onboarding payload above &mdash; 11 digits for the standard commissioning flow, or 21 digits (two rows) when the payload carries a vendor/product ID.</p>
 
-      <div class="row">
-        <div class="field">
-          <label for="fgColor">Foreground</label>
-          <input type="color" id="fgColor" value="#000000">
-        </div>
-        <div class="field">
-          <label for="bgColor">Background</label>
-          <input type="color" id="bgColor" value="#ffffff">
-        </div>
-      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="showBorder" checked>
+        1pt border
+      </label>
 
       <p class="error" id="errorMsg" hidden></p>
     </section>
 
     <section class="panel preview">
-      <div class="canvas-wrap">
-        <canvas id="qrCanvas"></canvas>
-      </div>
+      <div class="label-preview-frame" id="labelPreview"></div>
       <p class="meta" id="metaInfo"></p>
       <div class="actions">
         <button id="downloadPng" type="button">Download PNG</button>
@@ -77,12 +52,20 @@
   </main>
 
   <footer>
-    <p>QR encoding by <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener">qrcode-generator</a> (MIT), vendored locally in <code>vendor/</code>.</p>
+    <p>
+      Matter logo lockup and "CSA Digits" font per the Matter Brand Guidelines (Connectivity Standards Alliance).
+      QR encoding by <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener">qrcode-generator</a> (MIT).
+      Setup-code derivation ported from <a href="https://github.com/chill-uk/matter-qr-app" target="_blank" rel="noopener">matter-qr-app</a>.
+    </p>
   </footer>
 </div>
 
 <script src="vendor/qrcode.js"></script>
 <script src="vendor/qrcode_UTF8.js"></script>
-<script src="app.js"></script>
+<script src="vendor/matter-logo.js"></script>
+<script src="vendor/csaf-font-base64.js"></script>
+<script src="vendor/matter-payload.js"></script>
+<script src="matter-label.js"></script>
+<script src="matter-label-app.js"></script>
 </body>
 </html>

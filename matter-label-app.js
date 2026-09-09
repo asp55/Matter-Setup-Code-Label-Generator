@@ -1,9 +1,10 @@
 (function () {
+  const PNG_EXPORT_DPI = 300;
+
   const qrPayloadEl = document.getElementById('qrPayload');
   const ecLevelEl = document.getElementById('ecLevel');
   const derivedCodeEl = document.getElementById('derivedCode');
   const showBorderEl = document.getElementById('showBorder');
-  const exportDpiEl = document.getElementById('exportDpi');
   const errorMsgEl = document.getElementById('errorMsg');
   const metaInfoEl = document.getElementById('metaInfo');
   const previewEl = document.getElementById('labelPreview');
@@ -103,9 +104,8 @@
 
   downloadPngBtn.addEventListener('click', () => {
     if (!lastSvg || !lastMeta) return;
-    const dpi = parseInt(exportDpiEl.value, 10);
-    const widthPx = Math.round((lastMeta.cardWidthMm / 25.4) * dpi);
-    const heightPx = Math.round((lastMeta.cardHeightMm / 25.4) * dpi);
+    const widthPx = Math.round((lastMeta.cardWidthMm / 25.4) * PNG_EXPORT_DPI);
+    const heightPx = Math.round((lastMeta.cardHeightMm / 25.4) * PNG_EXPORT_DPI);
 
     const blob = new Blob([lastSvg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);

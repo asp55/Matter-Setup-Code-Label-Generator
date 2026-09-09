@@ -1,11 +1,3 @@
-.subtitle a {
-  color: var(--accent);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.subtitle a:hover { text-decoration: underline; }
-
 /* Overrides the white editable-input fill (style.css) so this readonly
    field visually reads as non-editable, while staying selectable/copyable. */
 input.derived-code[readonly] {
@@ -25,11 +17,6 @@ input.derived-code[readonly] {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 0.78rem;
-}
-
-.checkbox-field {
-  display: flex;
-  align-items: flex-end;
 }
 
 .checkbox-label {
