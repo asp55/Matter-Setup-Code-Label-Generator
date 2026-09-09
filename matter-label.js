@@ -16,7 +16,6 @@
   // ---------------------------------------------------------------------
 
   const MM_PER_PT = 25.4 / 72;
-  const DAY_COLOR = '#F3FFFF';
   const WHITE = '#FFFFFF';
   const INK = '#000000';
 
@@ -103,7 +102,7 @@
   // with the CSA Digits font embedded as a base64 data URI so the exported
   // file needs no external font/asset files.
   function buildLabelSvg(opts) {
-    const { qrPayload, ecLevel, setupDigits, background, showBorder } = opts;
+    const { qrPayload, ecLevel, setupDigits, showBorder } = opts;
 
     if (!qrPayload) throw new Error('QR payload is required.');
     const codeLines = formatSetupCode(setupDigits);
@@ -129,23 +128,19 @@
         `font-family="CSA Digits" font-size="${fontSizeMm.toFixed(3)}" fill="${INK}">${escapeXml(line)}</text>`;
     }).join('');
 
-    const bg = background === 'white' ? WHITE : DAY_COLOR;
     const logoScaleX = LOGO.width / MATTER_LOGO_VIEWBOX.width;
     const logoScaleY = LOGO.height / MATTER_LOGO_VIEWBOX.height;
 
-    // Card rect at the label's exact nominal size (22 x cardHeight); the
-    // border, when shown, is aligned fully *inside* that boundary (as in
-    // the brand asset) by stroking at double width and clipping away the
-    // outer half with an identical rect, rather than SVG's default
-    // centered stroke (which would bleed half the stroke width outside
-    // the nominal box, or shrink the rect to compensate).
-    const cardRectAttrs = `x="0" y="0" width="${CARD_WIDTH_MM}" height="${cardHeight}" ` +
-      `rx="${CORNER_RADIUS_MM}" ry="${CORNER_RADIUS_MM}"`;
-    const cardRect = showBorder
-      ? `<clipPath id="cardClip"><rect ${cardRectAttrs}/></clipPath>` +
-        `<rect ${cardRectAttrs} fill="${bg}"/>` +
-        `<rect ${cardRectAttrs} fill="none" stroke="${INK}" stroke-width="${(BORDER_MM * 2).toFixed(4)}" clip-path="url(#cardClip)"/>`
-      : `<rect ${cardRectAttrs} fill="${bg}"/>`;
+    // A plain centered 1pt stroke: the rect path is inset by half the
+    // border width on each side (0.5pt), so the stroke's outer edge -- not
+    // the path itself -- lands exactly on the card's nominal 22 x
+    // cardHeight boundary.
+    const borderStroke = showBorder ? BORDER_MM : 0;
+    const half = borderStroke / 2;
+    const cardRect = `<rect x="${half.toFixed(4)}" y="${half.toFixed(4)}" ` +
+      `width="${(CARD_WIDTH_MM - borderStroke).toFixed(4)}" height="${(cardHeight - borderStroke).toFixed(4)}" ` +
+      `rx="${CORNER_RADIUS_MM}" ry="${CORNER_RADIUS_MM}" fill="${WHITE}" ` +
+      (showBorder ? `stroke="${INK}" stroke-width="${BORDER_MM.toFixed(4)}"` : '') + `/>`;
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH_MM} ${cardHeight}" ` +
       `width="${CARD_WIDTH_MM}mm" height="${cardHeight}mm">` +

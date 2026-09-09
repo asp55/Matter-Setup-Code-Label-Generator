@@ -2,7 +2,6 @@
   const qrPayloadEl = document.getElementById('qrPayload');
   const ecLevelEl = document.getElementById('ecLevel');
   const derivedCodeEl = document.getElementById('derivedCode');
-  const backgroundEl = document.getElementById('background');
   const showBorderEl = document.getElementById('showBorder');
   const exportDpiEl = document.getElementById('exportDpi');
   const errorMsgEl = document.getElementById('errorMsg');
@@ -40,7 +39,6 @@
     return {
       qrPayload: qrPayloadEl.value.trim(),
       ecLevel: ecLevelEl.value,
-      background: backgroundEl.value,
       showBorder: showBorderEl.checked,
     };
   }
@@ -57,11 +55,11 @@
       lastMeta = null;
       previewEl.innerHTML = '';
       metaInfoEl.textContent = '';
-      derivedCodeEl.textContent = '—';
+      derivedCodeEl.value = '—';
       return;
     }
     setError(null);
-    derivedCodeEl.textContent = MatterLabel.formatSetupCode(opts.setupDigits).join(' / ');
+    derivedCodeEl.value = opts.setupDigits;
     lastSvg = result.svg;
     lastMeta = result.meta;
     previewEl.innerHTML = result.svg;
@@ -82,7 +80,7 @@
   const debouncedRender = debounce(render, 150);
 
   qrPayloadEl.addEventListener('input', debouncedRender);
-  [ecLevelEl, backgroundEl, showBorderEl].forEach((el) =>
+  [ecLevelEl, showBorderEl].forEach((el) =>
     el.addEventListener('input', render)
   );
 

@@ -74,13 +74,13 @@ label {
   color: var(--muted);
 }
 
-textarea, select, input[type="number"] {
+textarea, select, input[type="number"], input[type="text"] {
   width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
+  background: #ffffff;
+  color: #1d1d1f;
   font-size: 0.95rem;
   font-family: inherit;
   resize: vertical;
@@ -92,7 +92,7 @@ input[type="color"] {
   padding: 2px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: #ffffff;
 }
 
 .row {

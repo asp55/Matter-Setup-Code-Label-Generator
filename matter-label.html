@@ -31,24 +31,13 @@
       </select>
 
       <label>Setup code (derived from the QR payload)</label>
-      <p class="derived-code" id="derivedCode">&mdash;</p>
+      <input type="text" class="derived-code" id="derivedCode" value="&mdash;" readonly aria-label="Derived setup code">
       <p class="hint">Decoded from the Matter onboarding payload above &mdash; 11 digits for the standard commissioning flow, or 21 digits (two rows) when the payload carries a vendor/product ID.</p>
 
-      <div class="row">
-        <div class="field">
-          <label for="background">Background</label>
-          <select id="background">
-            <option value="white" selected>White</option>
-            <option value="day">Day (#F3FFFF)</option>
-          </select>
-        </div>
-        <div class="field checkbox-field">
-          <label class="checkbox-label">
-            <input type="checkbox" id="showBorder" checked>
-            1pt border
-          </label>
-        </div>
-      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" id="showBorder" checked>
+        1pt border
+      </label>
 
       <p class="error" id="errorMsg" hidden></p>
     </section>

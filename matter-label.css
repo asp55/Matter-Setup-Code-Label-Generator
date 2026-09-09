@@ -6,7 +6,10 @@
 
 .subtitle a:hover { text-decoration: underline; }
 
-.derived-code {
+/* Overrides the white editable-input fill (style.css) so this readonly
+   field visually reads as non-editable, while staying selectable/copyable. */
+input.derived-code[readonly] {
+  width: 100%;
   margin: 0;
   padding: 8px 10px;
   border-radius: 8px;
@@ -50,7 +53,10 @@
 }
 
 .label-preview-frame svg {
-  width: auto;
-  height: 260px;
+  /* Fixed width (the card is always 22mm wide) with auto height, so a
+     taller 21-digit card (33mm) renders visibly taller at the same scale
+     instead of being squashed to match a fixed preview height. */
+  width: 190px;
+  height: auto;
   filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.12));
 }
