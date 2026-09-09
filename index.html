@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Generator</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>QR Code Generator</h1>
+    <p class="subtitle">Runs entirely in your browser — no data leaves this page.</p>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <label for="data">Text or URL</label>
+      <textarea id="data" rows="4" placeholder="Type text, a URL, or any payload to encode&hellip;">https://claude.com</textarea>
+
+      <div class="row">
+        <div class="field">
+          <label for="ecLevel">Error correction</label>
+          <select id="ecLevel">
+            <option value="L">L &ndash; ~7% recovery</option>
+            <option value="M">M &ndash; ~15% recovery</option>
+            <option value="Q">Q &ndash; ~25% recovery</option>
+            <option value="H">H &ndash; ~30% recovery</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="version">Version</label>
+          <select id="version">
+            <option value="0" selected>Auto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="size">Module size (px)</label>
+          <input type="number" id="size" min="1" max="40" value="8">
+        </div>
+        <div class="field">
+          <label for="margin">Quiet zone (modules)</label>
+          <input type="number" id="margin" min="0" max="20" value="4">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="fgColor">Foreground</label>
+          <input type="color" id="fgColor" value="#000000">
+        </div>
+        <div class="field">
+          <label for="bgColor">Background</label>
+          <input type="color" id="bgColor" value="#ffffff">
+        </div>
+      </div>
+
+      <p class="error" id="errorMsg" hidden></p>
+    </section>
+
+    <section class="panel preview">
+      <div class="canvas-wrap">
+        <canvas id="qrCanvas"></canvas>
+      </div>
+      <p class="meta" id="metaInfo"></p>
+      <div class="actions">
+        <button id="downloadPng" type="button">Download PNG</button>
+        <button id="downloadSvg" type="button">Download SVG</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>QR encoding by <a href="https://github.com/kazuhikoarase/qrcode-generator" target="_blank" rel="noopener">qrcode-generator</a> (MIT), vendored locally in <code>vendor/</code>.</p>
+  </footer>
+</div>
+
+<script src="vendor/qrcode.js"></script>
+<script src="vendor/qrcode_UTF8.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
