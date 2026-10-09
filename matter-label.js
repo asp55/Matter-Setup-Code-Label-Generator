@@ -98,6 +98,31 @@
     return d;
   }
 
+  function svgOpen(cardHeight) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH_MM} ${cardHeight}" ` +
+      `width="${CARD_WIDTH_MM}mm" height="${cardHeight}mm">` +
+      `<defs><style>@font-face{font-family:'CSA Digits';src:url(data:font/ttf;base64,${CSA_DIGITS_FONT_BASE64}) format('truetype');}</style></defs>`;
+  }
+
+  // A plain centered 1pt stroke: the rect path is inset by half the border
+  // width on each side (0.5pt), so the stroke's outer edge -- not the path
+  // itself -- lands exactly on the card's nominal 22 x cardHeight boundary.
+  function cardRect(cardHeight, showBorder) {
+    const borderStroke = showBorder ? BORDER_MM : 0;
+    const half = borderStroke / 2;
+    return `<rect x="${half.toFixed(4)}" y="${half.toFixed(4)}" ` +
+      `width="${(CARD_WIDTH_MM - borderStroke).toFixed(4)}" height="${(cardHeight - borderStroke).toFixed(4)}" ` +
+      `rx="${CORNER_RADIUS_MM}" ry="${CORNER_RADIUS_MM}" fill="${WHITE}" ` +
+      (showBorder ? `stroke="${INK}" stroke-width="${BORDER_MM.toFixed(4)}"` : '') + `/>`;
+  }
+
+  function logoGroup() {
+    const logoScaleX = LOGO.width / MATTER_LOGO_VIEWBOX.width;
+    const logoScaleY = LOGO.height / MATTER_LOGO_VIEWBOX.height;
+    return `<g transform="translate(${LOGO.x},${LOGO.y}) scale(${logoScaleX.toFixed(6)},${logoScaleY.toFixed(6)})">` +
+      `<path d="${MATTER_LOGO_PATH_D}" fill="${INK}"/></g>`;
+  }
+
   // Builds the label as a self-contained SVG string (mm units via viewBox),
   // with the CSA Digits font embedded as a base64 data URI so the exported
   // file needs no external font/asset files.
@@ -128,29 +153,8 @@
         `font-family="CSA Digits" font-size="${fontSizeMm.toFixed(3)}" fill="${INK}">${escapeXml(line)}</text>`;
     }).join('');
 
-    const logoScaleX = LOGO.width / MATTER_LOGO_VIEWBOX.width;
-    const logoScaleY = LOGO.height / MATTER_LOGO_VIEWBOX.height;
-
-    // A plain centered 1pt stroke: the rect path is inset by half the
-    // border width on each side (0.5pt), so the stroke's outer edge -- not
-    // the path itself -- lands exactly on the card's nominal 22 x
-    // cardHeight boundary.
-    const borderStroke = showBorder ? BORDER_MM : 0;
-    const half = borderStroke / 2;
-    const cardRect = `<rect x="${half.toFixed(4)}" y="${half.toFixed(4)}" ` +
-      `width="${(CARD_WIDTH_MM - borderStroke).toFixed(4)}" height="${(cardHeight - borderStroke).toFixed(4)}" ` +
-      `rx="${CORNER_RADIUS_MM}" ry="${CORNER_RADIUS_MM}" fill="${WHITE}" ` +
-      (showBorder ? `stroke="${INK}" stroke-width="${BORDER_MM.toFixed(4)}"` : '') + `/>`;
-
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CARD_WIDTH_MM} ${cardHeight}" ` +
-      `width="${CARD_WIDTH_MM}mm" height="${cardHeight}mm">` +
-      `<defs><style>@font-face{font-family:'CSA Digits';src:url(data:font/ttf;base64,${CSA_DIGITS_FONT_BASE64}) format('truetype');}</style></defs>` +
-      cardRect +
-      `<g transform="translate(${LOGO.x},${LOGO.y}) scale(${logoScaleX.toFixed(6)},${logoScaleY.toFixed(6)})">` +
-      `<path d="${MATTER_LOGO_PATH_D}" fill="${INK}"/></g>` +
-      `<path d="${qrPathD}" fill="${INK}"/>` +
-      textLines +
-      `</svg>`;
+    const svg = svgOpen(cardHeight) + cardRect(cardHeight, showBorder) + logoGroup() +
+      `<path d="${qrPathD}" fill="${INK}"/>` + textLines + `</svg>`;
 
     return {
       svg,
@@ -165,5 +169,128 @@
     };
   }
 
-  window.MatterLabel = { buildLabelSvg, formatSetupCode };
+  // Placeholder / error states, shown in place of the real label before a
+  // payload is entered or when one fails to decode: same card/logo as the
+  // real label, but with the QR area repurposed for a status message and a
+  // dummy "####-###-####" setup code (CSA Digits has no "#" glyph, so this
+  // dummy code intentionally falls back to a generic monospace font rather
+  // than pretending to be real CSA Digits output).
+  const PLACEHOLDER_SETUP_CODE = '####-###-####';
+  const PLACEHOLDER_FILL = '#d5d5da';
+  const PLACEHOLDER_TEXT = '#8a8a8e';
+  const ERROR_RED = '#c0392b'; // matches style.css's --error (light mode)
+  const STATUS_FONT_SIZE_MM = 1.9;
+  const STATUS_FONT_STACK = '-apple-system, Helvetica, Arial, sans-serif';
+
+  function dummyCodeText(color) {
+    const fontSizeMm = PAIRING_CODE.fontSizePt * MM_PER_PT;
+    const y = PAIRING_CODE.topCenterY + fontSizeMm * CAP_HEIGHT_EM;
+    return `<text x="${PAIRING_CODE.topCenterX.toFixed(3)}" y="${y.toFixed(3)}" text-anchor="middle" ` +
+      `font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="${fontSizeMm.toFixed(3)}" ` +
+      `fill="${color}">${PLACEHOLDER_SETUP_CODE}</text>`;
+  }
+
+  // Greedily wraps text to at most maxCharsPerLine characters per line
+  // (word boundaries only); used to fit an arbitrary error message inside
+  // the fixed-size QR-area box.
+  function wrapText(text, maxCharsPerLine) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? current + ' ' + word : word;
+      if (candidate.length > maxCharsPerLine && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = candidate;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
+
+  function buildPlaceholderSvg(opts) {
+    const showBorder = opts && opts.showBorder;
+    const cardHeight = CARD_HEIGHT_STANDARD_MM;
+
+    const qrCenterX = QR.x + QR.size / 2;
+    const qrCenterY = QR.y + QR.size / 2;
+    const qrBlock = `<rect x="${QR.x}" y="${QR.y}" width="${QR.size}" height="${QR.size}" rx="1" ry="1" fill="${PLACEHOLDER_FILL}"/>` +
+      `<text x="${qrCenterX.toFixed(3)}" y="${(qrCenterY - 0.9).toFixed(3)}" text-anchor="middle" ` +
+      `font-family="${STATUS_FONT_STACK}" font-size="${STATUS_FONT_SIZE_MM}" fill="${PLACEHOLDER_TEXT}">waiting for</text>` +
+      `<text x="${qrCenterX.toFixed(3)}" y="${(qrCenterY + 1.6).toFixed(3)}" text-anchor="middle" ` +
+      `font-family="${STATUS_FONT_STACK}" font-size="${STATUS_FONT_SIZE_MM}" fill="${PLACEHOLDER_TEXT}">input</text>`;
+
+    const svg = svgOpen(cardHeight) + cardRect(cardHeight, showBorder) + logoGroup() + qrBlock +
+      dummyCodeText(PLACEHOLDER_TEXT) + `</svg>`;
+
+    return { svg, meta: { cardWidthMm: CARD_WIDTH_MM, cardHeightMm: cardHeight } };
+  }
+
+  const ERROR_BOX_PADDING_MM = 1.2;
+  const ERROR_CHAR_WIDTH_EM = 0.52; // rough average glyph advance for the sans-serif fallback stack
+  const ERROR_LINE_HEIGHT_FACTOR = 1.25;
+  const ERROR_MIN_FONT_SIZE_MM = 1;
+
+  // Finds the largest font size (down to ERROR_MIN_FONT_SIZE_MM) at which
+  // the word-wrapped message fits inside the box, so short messages stay
+  // readable at STATUS_FONT_SIZE_MM while longer ones shrink to fit. If
+  // even the minimum size doesn't fit, truncates the last visible line
+  // with an ellipsis rather than overflowing the box.
+  function fitMessageInBox(message, boxSize) {
+    const usableWidth = boxSize - 2 * ERROR_BOX_PADDING_MM;
+    const usableHeight = boxSize - 2 * ERROR_BOX_PADDING_MM;
+
+    for (let fontSize = STATUS_FONT_SIZE_MM; fontSize >= ERROR_MIN_FONT_SIZE_MM; fontSize -= 0.1) {
+      const maxCharsPerLine = Math.max(6, Math.floor(usableWidth / (fontSize * ERROR_CHAR_WIDTH_EM)));
+      const lines = wrapText(message, maxCharsPerLine);
+      if (lines.length * fontSize * ERROR_LINE_HEIGHT_FACTOR <= usableHeight) {
+        return { fontSize, lines };
+      }
+    }
+
+    const fontSize = ERROR_MIN_FONT_SIZE_MM;
+    const maxCharsPerLine = Math.max(6, Math.floor(usableWidth / (fontSize * ERROR_CHAR_WIDTH_EM)));
+    const maxLines = Math.max(1, Math.floor(usableHeight / (fontSize * ERROR_LINE_HEIGHT_FACTOR)));
+    const lines = wrapText(message, maxCharsPerLine).slice(0, maxLines);
+    const last = lines[lines.length - 1];
+    if (last && last.length > 3) {
+      lines[lines.length - 1] = last.slice(0, Math.max(1, maxCharsPerLine - 1)) + '…';
+    }
+    return { fontSize, lines };
+  }
+
+  // Shown in place of the real label when the QR payload can't be decoded
+  // into a setup code: the QR area becomes a white, red-bordered box
+  // holding the wrapped error message, in the same red as the page's own
+  // error text.
+  function buildErrorSvg(message, opts) {
+    const showBorder = opts && opts.showBorder;
+    const cardHeight = CARD_HEIGHT_STANDARD_MM;
+
+    const qrCenterX = QR.x + QR.size / 2;
+    const qrCenterY = QR.y + QR.size / 2;
+    const { fontSize, lines } = fitMessageInBox(message, QR.size);
+    const lineHeightMm = fontSize * ERROR_LINE_HEIGHT_FACTOR;
+    // The extra -0.5mm nudges the block up by roughly half a cap-height,
+    // since centering purely on baselines sits visually low.
+    const firstBaselineY = qrCenterY - ((lines.length - 1) * lineHeightMm) / 2 - 0.5;
+
+    const messageText = lines.map((line, i) => {
+      const y = firstBaselineY + i * lineHeightMm;
+      return `<text x="${qrCenterX.toFixed(3)}" y="${y.toFixed(3)}" text-anchor="middle" ` +
+        `font-family="${STATUS_FONT_STACK}" font-size="${fontSize.toFixed(2)}" fill="${ERROR_RED}">${escapeXml(line)}</text>`;
+    }).join('');
+
+    const errorBox = `<rect x="${QR.x}" y="${QR.y}" width="${QR.size}" height="${QR.size}" rx="1" ry="1" ` +
+      `fill="${WHITE}" stroke="${ERROR_RED}" stroke-width="${BORDER_MM.toFixed(4)}"/>` + messageText;
+
+    const svg = svgOpen(cardHeight) + cardRect(cardHeight, showBorder) + logoGroup() + errorBox +
+      dummyCodeText(PLACEHOLDER_TEXT) + `</svg>`;
+
+    return { svg, meta: { cardWidthMm: CARD_WIDTH_MM, cardHeightMm: cardHeight } };
+  }
+
+  window.MatterLabel = { buildLabelSvg, buildPlaceholderSvg, buildErrorSvg, formatSetupCode };
 }());

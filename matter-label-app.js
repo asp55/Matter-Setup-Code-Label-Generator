@@ -46,15 +46,28 @@
 
   function render() {
     const opts = currentOptions();
+
+    if (!opts.qrPayload) {
+      setError(null);
+      lastSvg = null;
+      lastMeta = null;
+      derivedCodeEl.value = '—';
+      const placeholder = MatterLabel.buildPlaceholderSvg(opts);
+      previewEl.innerHTML = placeholder.svg;
+      metaInfoEl.textContent = 'Waiting for a Matter QR payload…';
+      return;
+    }
+
     let result;
     try {
       opts.setupDigits = deriveSetupDigits(opts.qrPayload);
       result = MatterLabel.buildLabelSvg(opts);
     } catch (err) {
-      setError(err.message || String(err));
+      const message = err.message || String(err);
+      setError(message);
       lastSvg = null;
       lastMeta = null;
-      previewEl.innerHTML = '';
+      previewEl.innerHTML = MatterLabel.buildErrorSvg(message, opts).svg;
       metaInfoEl.textContent = '';
       derivedCodeEl.value = '—';
       return;
